@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,19 +14,34 @@ interface LeakResult {
   breaches: string[];
 }
 
+interface Breach {
+  id: number;
+  name: string;
+  date: string;
+  records: string;
+  description?: string;
+}
+
 const Index = () => {
   const [searchValue, setSearchValue] = useState("");
   const [searchType, setSearchType] = useState<"email" | "phone" | "login">("email");
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<LeakResult | null>(null);
+  const [breaches, setBreaches] = useState<Breach[]>([]);
+  const [loadingBreaches, setLoadingBreaches] = useState(true);
 
-  const mockBreaches = [
-    { name: "LinkedIn", date: "2021", records: "700M+" },
-    { name: "Facebook", date: "2019", records: "533M" },
-    { name: "Yahoo", date: "2013", records: "3B" },
-    { name: "Adobe", date: "2013", records: "153M" },
-    { name: "Dropbox", date: "2012", records: "68M" },
-  ];
+  useEffect(() => {
+    fetch('https://functions.poehali.dev/f0723786-1dd3-4b5e-926c-bfeb01285fed')
+      .then(res => res.json())
+      .then(data => {
+        setBreaches(data.breaches || []);
+        setLoadingBreaches(false);
+      })
+      .catch(err => {
+        console.error('Failed to load breaches:', err);
+        setLoadingBreaches(false);
+      });
+  }, []);
 
   const handleSearch = async () => {
     if (!searchValue.trim()) {
@@ -36,29 +51,23 @@ const Index = () => {
 
     setIsSearching(true);
     
-    setTimeout(() => {
-      const random = Math.random();
-      if (random > 0.7) {
-        setResult({
-          type: "danger",
-          count: Math.floor(Math.random() * 5) + 3,
-          breaches: ["LinkedIn 2021", "Facebook 2019", "Adobe 2013"],
-        });
-      } else if (random > 0.4) {
-        setResult({
-          type: "warning",
-          count: Math.floor(Math.random() * 2) + 1,
-          breaches: ["Dropbox 2012"],
-        });
+    try {
+      const response = await fetch(
+        `https://functions.poehali.dev/d22f0560-1ba6-49a3-af0d-db7032809548?type=${searchType}&value=${encodeURIComponent(searchValue)}`
+      );
+      const data = await response.json();
+      
+      if (response.ok) {
+        setResult(data);
       } else {
-        setResult({
-          type: "safe",
-          count: 0,
-          breaches: [],
-        });
+        toast.error(data.error || 'Ошибка при проверке');
       }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast.error('Не удалось выполнить проверку');
+    } finally {
       setIsSearching(false);
-    }, 1500);
+    }
   };
 
   const scrollToSection = (id: string) => {
@@ -208,7 +217,15 @@ const Index = () => {
             <p className="text-gray-600">Крупнейшие утечки данных за последние годы</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockBreaches.map((breach, i) => (
+            {loadingBreaches ? (
+              <div className="col-span-full text-center py-12">
+                <Icon name="Loader2" className="h-8 w-8 animate-spin mx-auto text-gray-400" />
+              </div>
+            ) : breaches.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-gray-500">
+                Нет данных об утечках
+              </div>
+            ) : breaches.map((breach, i) => (
               <Card key={i} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">

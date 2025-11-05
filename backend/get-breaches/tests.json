@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Получение списка утечек",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "breaches": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

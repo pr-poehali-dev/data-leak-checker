@@ -1,0 +1,38 @@
+{
+  "tests": [
+    {
+      "name": "Проверка безопасного email",
+      "method": "GET",
+      "path": "/?type=email&value=safe@example.com",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "type": "safe",
+        "count": 0,
+        "breaches": []
+      },
+      "bodyMatcher": "exact"
+    },
+    {
+      "name": "Проверка скомпрометированного email",
+      "method": "GET",
+      "path": "/?type=email&value=test@example.com",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "type": "warning",
+        "count": 1,
+        "breaches": ["LinkedIn 2021"]
+      },
+      "bodyMatcher": "exact"
+    },
+    {
+      "name": "Проверка без параметра value",
+      "method": "GET",
+      "path": "/?type=email",
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
